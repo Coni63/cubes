@@ -109,34 +109,44 @@ def generate_polycubes(n, use_cache=False):
     list(np.array): Returns a list of all polycubes of size n as numpy byte arrays
   
     """
-    if n < 1:
-        return []
-    elif n == 1:
-        return [np.ones((1,1,1), dtype=np.byte)]
+    if n == 1:
+        return [np.ones((1, 1, 1), dtype=np.byte)]
     elif n == 2:
-        return [np.ones((2,1,1), dtype=np.byte)]
+        return [np.ones((2, 1, 1), dtype=np.byte)]
+    else:
+        polycubes = [np.ones((2, 1, 1), dtype=np.byte)]
 
-    # Check cache
-    cache_path = f"cubes_{n}.npy"
-    if use_cache and os.path.exists(cache_path):
-        print(f"\rLoading polycubes n={n} from cache: ", end = "")
-        polycubes = np.load(cache_path, allow_pickle=True)
-        print(f"{len(polycubes)} shapes")
-        return polycubes
-
-    base_cubes = generate_polycubes(n-1, use_cache)
-
-    polycubes = add_depth(base_cubes)
-
-    if use_cache:
+    for i in range(3, n+1):
+        # Check cache
         cache_path = f"cubes_{n}.npy"
-        np.save(cache_path, np.array(polycubes, dtype=object), allow_pickle=True)
+        if use_cache and os.path.exists(cache_path):
+            print(f"\rLoading polycubes n={n} from cache: ", end="")
+            polycubes = np.load(cache_path, allow_pickle=True)
+            print(f"{len(polycubes)} shapes")
+            continue
+
+        t1_start = perf_counter()
+        polycubes = compute_next_depth(polycubes)
+        t1_stop = perf_counter()
+
+        print(f"Depth {i}: {len(polycubes):>6} cubes found in {(t1_stop - t1_start):0.3f}s")
+
+        if use_cache:
+            cache_path = f"cubes_{n}.npy"
+            np.save(cache_path, np.array(polycubes, dtype=object), allow_pickle=True)
 
     return polycubes
 
+def compute_next_depth(current_polycubes):
+    """
+    For a given set of polycubes, compute every cubes of the next depth level
 
-def add_depth(current_polycubes):
-    # Empty list of new n-polycubes
+    Parameters:
+    polycube (list[np.array]): list of 3D Numpy byte array where 1 values indicate polycube positions
+  
+    Returns:
+    list[np.array]: list of 3D Numpy byte array where 1 values indicate polycube positions
+    """
     polycubes = []
     polycubes_rle = set()
 
