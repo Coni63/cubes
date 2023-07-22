@@ -124,28 +124,28 @@ def generate_polycubes(n, use_cache=False):
         print(f"{len(polycubes)} shapes")
         return polycubes
 
+    base_cubes = generate_polycubes(n-1, use_cache)
+
+    polycubes = add_depth(base_cubes)
+
+    if use_cache:
+        cache_path = f"cubes_{n}.npy"
+        np.save(cache_path, np.array(polycubes, dtype=object), allow_pickle=True)
+
+    return polycubes
+
+
+def add_depth(current_polycubes):
     # Empty list of new n-polycubes
     polycubes = []
     polycubes_rle = set()
 
-    base_cubes = generate_polycubes(n-1, use_cache)
-
-    for idx, base_cube in enumerate(base_cubes):
+    for idx, base_cube in enumerate(current_polycubes):
         # Iterate over possible expansion positions
         for new_cube in expand_cube(base_cube):
             if not cube_exists_rle(new_cube, polycubes_rle):
                 polycubes.append(new_cube)
                 polycubes_rle.add(rle(new_cube))
-
-        if (idx % 100 == 0):               
-            perc = round((idx / len(base_cubes)) * 100,2)
-            print(f"\rGenerating polycubes n={n}: {perc}%", end="")
-
-    print(f"\rGenerating polycubes n={n}: 100%   ")
-    
-    if use_cache:
-        cache_path = f"cubes_{n}.npy"
-        np.save(cache_path, np.array(polycubes, dtype=object), allow_pickle=True)
 
     return polycubes
 
@@ -211,9 +211,8 @@ if __name__ == "__main__":
                     prog='Polycube Generator',
                     description='Generates all polycubes (combinations of cubes) of size n.')
 
-    parser.add_argument('n', metavar='N', type=int,
-                    help='The number of cubes within each polycube')
-    
+    parser.add_argument('n', metavar='N', type=int, help='The number of cubes within each polycube')
+
     #Requires python >=3.9
     parser.add_argument('--cache', action=argparse.BooleanOptionalAction)
 
@@ -230,8 +229,8 @@ if __name__ == "__main__":
     # Stop the timer
     t1_stop = perf_counter()
 
-    print (f"Found {len(all_cubes)} unique polycubes")
-    print (f"Elapsed time: {round(t1_stop - t1_start,3)}s")
+    print(f"Found {len(all_cubes)} unique polycubes")
+    print(f"Elapsed time: {round(t1_stop - t1_start,3)}s")
 
 
 # Code for if you want to generate pictures of the sets of cubes. Will work up to about n=8, before there are simply too many!
